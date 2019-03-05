@@ -1,6 +1,7 @@
 .git
 venv
 .env
+.env.prod
 .env.dev
 .docker
 src/celerybeat.pid
