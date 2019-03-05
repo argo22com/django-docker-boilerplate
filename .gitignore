@@ -1,0 +1,6 @@
+.idea
+venv
+**/__pycache__
+src/celerybeat.pid
+.env
+.env.prod

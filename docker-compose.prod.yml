@@ -1,0 +1,91 @@
+version: '2'
+services:
+  nginx:
+    restart: always
+    image: argo22/nginx-for-python
+    volumes:
+      - media:/code/media
+      - static:/code/static
+    links:
+      - app:app
+
+  app:
+    restart: always
+    image: project:latest
+    links:
+      - db:db
+      - redis:redis
+    env_file:
+      - .env.prod
+    volumes:
+      - media:/code/media
+      - static:/code/static
+  db:
+    restart: always
+    image: postgres:alpine
+    volumes:
+      - db:/var/lib/postgresql/data
+    env_file:
+      - .env.prod
+
+
+  collectstatic:
+    restart: on-failure
+    image: project:latest
+    env_file:
+      - .env.prod
+    command: python manage.py collectstatic --no-input
+    links:
+      - db:db
+      - redis:redis
+    volumes:
+      - static:/code/static
+      - media:/code/media
+    depends_on:
+      - db
+
+  migrate:
+    restart: on-failure
+    image: project:latest
+    env_file:
+      - .env.prod
+    command: /venv/bin/python manage.py migrate --no-input
+    links:
+      - db:db
+      - redis:redis
+    depends_on:
+      - db
+
+  #
+  #  scheduler:
+  #    image: project:latest
+  #    links:
+  #      - db:db
+  #      - redis:redis
+  #    env_file:
+  #      - .env.prod
+  #    command: celery -A project beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+  #    volumes:
+  #      - media:/code/media
+  #      - static:/code/static
+  #
+  #  worker:
+  #    image: project:latest
+  #    links:
+  #      - db:db
+  #      - redis:redis
+  #    env_file:
+  #      - .env.prod
+  #    command: celery -A project worker -l debug
+  #    volumes:
+  #      - media:/code/media
+  #      - static:/code/static
+
+  redis:
+    restart: always
+    image: redis:alpine
+
+volumes:
+  db:
+  media:
+  static:
